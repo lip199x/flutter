@@ -416,7 +416,7 @@ enum ListTileControlAffinity {
 /// you're looking for, it's easy to create custom list items with a
 /// combination of other widgets, such as [Row]s and [Column]s.
 ///
-/// {@tool dartpad --template=stateless_widget_scaffold_no_null_safety}
+/// {@tool dartpad --template=stateless_widget_scaffold}
 ///
 /// Here is an example of a custom list item that resembles a YouTube-related
 /// video list item created with [Expanded] and [Container] widgets.
@@ -426,10 +426,10 @@ enum ListTileControlAffinity {
 /// ```dart preamble
 /// class CustomListItem extends StatelessWidget {
 ///   const CustomListItem({
-///     this.thumbnail,
-///     this.title,
-///     this.user,
-///     this.viewCount,
+///     required this.thumbnail,
+///     required this.title,
+///     required this.user,
+///     required this.viewCount,
 ///   });
 ///
 ///   final Widget thumbnail;
@@ -468,10 +468,10 @@ enum ListTileControlAffinity {
 ///
 /// class _VideoDescription extends StatelessWidget {
 ///   const _VideoDescription({
-///     Key key,
-///     this.title,
-///     this.user,
-///     this.viewCount,
+///     Key? key,
+///     required this.title,
+///     required this.user,
+///     required this.viewCount,
 ///   }) : super(key: key);
 ///
 ///   final String title;
@@ -537,7 +537,7 @@ enum ListTileControlAffinity {
 /// ```
 /// {@end-tool}
 ///
-/// {@tool dartpad --template=stateless_widget_scaffold_no_null_safety}
+/// {@tool dartpad --template=stateless_widget_scaffold}
 ///
 /// Here is an example of an article list item with multiline titles and
 /// subtitles. It utilizes [Row]s and [Column]s, as well as [Expanded] and
@@ -548,12 +548,12 @@ enum ListTileControlAffinity {
 /// ```dart preamble
 /// class _ArticleDescription extends StatelessWidget {
 ///   _ArticleDescription({
-///     Key key,
-///     this.title,
-///     this.subtitle,
-///     this.author,
-///     this.publishDate,
-///     this.readDuration,
+///     Key? key,
+///     required this.title,
+///     required this.subtitle,
+///     required this.author,
+///     required this.publishDate,
+///     required this.readDuration,
 ///   }) : super(key: key);
 ///
 ///   final String title;
@@ -623,13 +623,13 @@ enum ListTileControlAffinity {
 ///
 /// class CustomListItemTwo extends StatelessWidget {
 ///   CustomListItemTwo({
-///     Key key,
-///     this.thumbnail,
-///     this.title,
-///     this.subtitle,
-///     this.author,
-///     this.publishDate,
-///     this.readDuration,
+///     Key? key,
+///     required this.thumbnail,
+///     required this.title,
+///     required this.subtitle,
+///     required this.author,
+///     required this.publishDate,
+///     required this.readDuration,
 ///   }) : super(key: key);
 ///
 ///   final Widget thumbnail;
@@ -889,14 +889,14 @@ class ListTile extends StatelessWidget {
   /// By default the selected color is the theme's primary color. The selected color
   /// can be overridden with a [ListTileTheme].
   ///
-  /// {@tool dartpad --template=stateful_widget_scaffold_no_null_safety}
+  /// {@tool dartpad --template=stateful_widget_scaffold}
   ///
   /// Here is an example of using a [StatefulWidget] to keep track of the
   /// selected index, and using that to set the `selected` property on the
   /// corresponding [ListTile].
   ///
   /// ```dart
-  ///   int _selectedIndex;
+  ///   int _selectedIndex = 0;
   ///
   ///   @override
   ///   Widget build(BuildContext context) {
@@ -1076,6 +1076,12 @@ class ListTile extends StatelessWidget {
       : style.copyWith(color: color);
   }
 
+  TextStyle _trailingAndLeadingTextStyle(ThemeData theme, ListTileTheme? tileTheme) {
+    final TextStyle style = theme.textTheme.bodyText2!;
+    final Color? color = _textColor(theme, tileTheme, style.color);
+    return style.copyWith(color: color);
+  }
+
   Color _tileBackgroundColor(ListTileTheme? tileTheme) {
     if (!selected) {
       if (tileColor != null)
@@ -1101,14 +1107,21 @@ class ListTile extends StatelessWidget {
     final ListTileTheme tileTheme = ListTileTheme.of(context);
 
     IconThemeData? iconThemeData;
-    if (leading != null || trailing != null)
+    TextStyle? leadingAndTrailingTextStyle;
+    if (leading != null || trailing != null) {
       iconThemeData = IconThemeData(color: _iconColor(theme, tileTheme));
+      leadingAndTrailingTextStyle = _trailingAndLeadingTextStyle(theme, tileTheme);
+    }
 
     Widget? leadingIcon;
     if (leading != null) {
-      leadingIcon = IconTheme.merge(
-        data: iconThemeData!,
-        child: leading!,
+      leadingIcon = AnimatedDefaultTextStyle(
+        style: leadingAndTrailingTextStyle!,
+        duration: kThemeChangeDuration,
+        child: IconTheme.merge(
+          data: iconThemeData!,
+          child: leading!,
+        ),
       );
     }
 
@@ -1132,9 +1145,13 @@ class ListTile extends StatelessWidget {
 
     Widget? trailingIcon;
     if (trailing != null) {
-      trailingIcon = IconTheme.merge(
-        data: iconThemeData!,
-        child: trailing!,
+      trailingIcon = AnimatedDefaultTextStyle(
+        style: leadingAndTrailingTextStyle!,
+        duration: kThemeChangeDuration,
+        child: IconTheme.merge(
+          data: iconThemeData!,
+          child: trailing!,
+        ),
       );
     }
 
@@ -1674,7 +1691,7 @@ class _RenderListTile extends RenderBox {
     assert(debugCannotComputeDryLayout(
       reason: 'Layout requires baseline metrics, which are only available after a full layout.'
     ));
-    return const Size(0, 0);
+    return Size.zero;
   }
 
   // All of the dimensions below were taken from the Material Design spec:

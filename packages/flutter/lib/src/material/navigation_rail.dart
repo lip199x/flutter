@@ -16,9 +16,6 @@ import 'navigation_rail_theme.dart';
 import 'theme.dart';
 import 'theme_data.dart';
 
-// Examples can assume:
-// // @dart = 2.9
-
 /// A material widget that is meant to be displayed at the left or right of an
 /// app to navigate between a small number of views, typically between three and
 /// five.
@@ -41,7 +38,7 @@ import 'theme_data.dart';
 /// [https://github.com/flutter/samples/blob/master/experimental/web_dashboard/lib/src/widgets/third_party/adaptive_scaffold.dart]
 /// for an example.
 ///
-/// {@tool dartpad --template=stateful_widget_material_no_null_safety}
+/// {@tool dartpad --template=stateful_widget_material}
 ///
 /// This example shows a [NavigationRail] used within a Scaffold with 3
 /// [NavigationRailDestination]s. The main content is separated by a divider
@@ -350,12 +347,12 @@ class NavigationRail extends StatefulWidget {
   ///   final Animation<double> animation = NavigationRail.extendedAnimation(context);
   ///   return AnimatedBuilder(
   ///     animation: animation,
-  ///     builder: (BuildContext context, Widget child) {
+  ///     builder: (BuildContext context, Widget? child) {
   ///       // The extended fab has a shorter height than the regular fab.
   ///       return Container(
   ///         height: 56,
   ///         padding: EdgeInsets.symmetric(
-  ///           vertical: lerpDouble(0, 6, animation.value),
+  ///           vertical: lerpDouble(0, 6, animation.value)!,
   ///         ),
   ///         child: animation.value == 0
   ///           ? FloatingActionButton(
@@ -499,6 +496,7 @@ class _NavigationRailState extends State<NavigationRail> with TickerProviderStat
                           labelType: labelType,
                           iconTheme: widget.selectedIndex == i ? selectedIconTheme : unselectedIconTheme,
                           labelTextStyle: widget.selectedIndex == i ? selectedLabelTextStyle : unselectedLabelTextStyle,
+                          padding: widget.destinations[i].padding,
                           onTap: () {
                             widget.onDestinationSelected!(i);
                           },
@@ -582,6 +580,7 @@ class _RailDestination extends StatelessWidget {
     required this.labelTextStyle,
     required this.onTap,
     required this.indexLabel,
+    this.padding,
   }) : assert(minWidth != null),
        assert(minExtendedWidth != null),
        assert(icon != null),
@@ -612,6 +611,7 @@ class _RailDestination extends StatelessWidget {
   final TextStyle labelTextStyle;
   final VoidCallback onTap;
   final String indexLabel;
+  final EdgeInsetsGeometry? padding;
 
   final Animation<double> _positionAnimation;
 
@@ -637,42 +637,48 @@ class _RailDestination extends StatelessWidget {
           ),
         );
         if (extendedTransitionAnimation.value == 0) {
-          content = Stack(
-            children: <Widget>[
-              iconPart,
-              // For semantics when label is not showing,
-              SizedBox(
-                width: 0,
-                height: 0,
-                child: Opacity(
-                  alwaysIncludeSemantics: true,
-                  opacity: 0.0,
-                  child: label,
+          content = Padding(
+            padding: padding ?? EdgeInsets.zero,
+            child: Stack(
+              children: <Widget>[
+                iconPart,
+                // For semantics when label is not showing,
+                SizedBox(
+                  width: 0,
+                  height: 0,
+                  child: Opacity(
+                    alwaysIncludeSemantics: true,
+                    opacity: 0.0,
+                    child: label,
+                  ),
                 ),
-              ),
-            ]
+              ]
+            ),
           );
         } else {
-          content = ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: lerpDouble(minWidth, minExtendedWidth, extendedTransitionAnimation.value)!,
-            ),
-            child: ClipRect(
-              child: Row(
-                children: <Widget>[
-                  iconPart,
-                  Align(
-                    heightFactor: 1.0,
-                    widthFactor: extendedTransitionAnimation.value,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Opacity(
-                      alwaysIncludeSemantics: true,
-                      opacity: _extendedLabelFadeValue(),
-                      child: styledLabel,
+          content = Padding(
+            padding: padding ?? EdgeInsets.zero,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: lerpDouble(minWidth, minExtendedWidth, extendedTransitionAnimation.value)!,
+              ),
+              child: ClipRect(
+                child: Row(
+                  children: <Widget>[
+                    iconPart,
+                    Align(
+                      heightFactor: 1.0,
+                      widthFactor: extendedTransitionAnimation.value,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Opacity(
+                        alwaysIncludeSemantics: true,
+                        opacity: _extendedLabelFadeValue(),
+                        child: styledLabel,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: _horizontalDestinationPadding * extendedTransitionAnimation.value),
-                ],
+                    SizedBox(width: _horizontalDestinationPadding * extendedTransitionAnimation.value),
+                  ],
+                ),
               ),
             ),
           );
@@ -686,7 +692,7 @@ class _RailDestination extends StatelessWidget {
             minWidth: minWidth,
             minHeight: minWidth,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: _horizontalDestinationPadding),
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: _horizontalDestinationPadding),
           child: ClipRect(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -716,7 +722,7 @@ class _RailDestination extends StatelessWidget {
             minWidth: minWidth,
             minHeight: minWidth,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: _horizontalDestinationPadding),
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: _horizontalDestinationPadding),
           child: Column(
             children: <Widget>[
               const SizedBox(height: _verticalDestinationPaddingWithLabel),
@@ -814,6 +820,7 @@ class NavigationRailDestination {
     required this.icon,
     Widget? selectedIcon,
     this.label,
+    this.padding,
   }) : selectedIcon = selectedIcon ?? icon,
        assert(icon != null);
 
@@ -851,6 +858,9 @@ class NavigationRailDestination {
   /// still used for semantics, and may still be used if
   /// [NavigationRail.extended] is true.
   final Widget? label;
+
+  /// The amount of space to inset the destination item.
+  final EdgeInsetsGeometry? padding;
 }
 
 class _ExtendedNavigationRailAnimation extends InheritedWidget {
